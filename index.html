@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Addon AI Analysis - PostMessage Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 12px;
+      font-size: 14px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    h1 {
+      font-size: 18px;
+      color: #00d2ff;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 13px;
+      color: #7f8c8d;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .panel {
+      background: #16213e;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    button {
+      background: #0f3460;
+      color: #00d2ff;
+      border: 1px solid #00d2ff33;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active {
+      background: #0a2a4a;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .btn-group button {
+      flex: 1;
+      min-width: 0;
+    }
+
+    textarea,
+    input,
+    select {
+      background: #0f1a2e;
+      color: #e0e0e0;
+      border: 1px solid #2a2a4a;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    label {
+      display: block;
+      color: #7f8c8d;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    #log {
+      background: #0a0a1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      padding: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      font-size: 11px;
+      line-height: 1.6;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    }
+
+    .log-send {
+      color: #f39c12;
+    }
+
+    .log-recv {
+      color: #2ecc71;
+    }
+
+    .log-push {
+      color: #e74c3c;
+    }
+
+    .log-error {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+
+    .log-time {
+      color: #555;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .status-ok {
+      background: #2ecc7133;
+      color: #2ecc71;
+    }
+
+    .status-waiting {
+      background: #f39c1233;
+      color: #f39c12;
+    }
+
+    .status-sub {
+      background: #e74c3c33;
+      color: #e74c3c;
+    }
+
+    #subscriptionStatus,
+    #transcriptSubStatus {
+      margin-left: 8px;
+    }
+
+    .clear-btn {
+      background: #3a1a1a;
+      color: #e74c3c;
+      border-color: #e74c3c33;
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+
+    .clear-btn:active {
+      background: #4a2a2a;
+    }
+
+    /* Results panel */
+    .results-empty {
+      color: #555;
+      font-style: italic;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .result-card {
+      background: #0f1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .result-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .result-role {
+      color: #00d2ff;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .result-lang {
+      color: #7f8c8d;
+      font-size: 11px;
+      background: #0a0a1a;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .result-body {
+      background: #0a0a1a;
+      border: 1px solid #1a1a3a;
+      border-radius: 3px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    }
+
+    .result-timestamp {
+      color: #555;
+      font-size: 11px;
+      margin-top: 6px;
+      text-align: right;
+    }
+
+    .result-source {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: 8px;
+    }
+
+    .source-request {
+      background: #2ecc7122;
+      color: #2ecc71;
+    }
+
+    .source-push {
+      background: #e74c3c22;
+      color: #e74c3c;
+    }
+
+    /* Transcript panel */
+    #transcriptContainer {
+      background: #0a0a1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      padding: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .transcript-line {
+      padding: 4px 0;
+      border-bottom: 1px solid #1a1a3a;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .transcript-line:last-child {
+      border-bottom: none;
+    }
+
+    .transcript-partial {
+      color: #7f8c8d;
+      font-style: italic;
+    }
+
+    .transcript-final {
+      color: #e0e0e0;
+    }
+
+    .transcript-meta {
+      font-size: 10px;
+      color: #555;
+      margin-right: 6px;
+    }
+
+    .transcript-lang {
+      font-size: 10px;
+      color: #00d2ff;
+      background: #00d2ff22;
+      padding: 1px 4px;
+      border-radius: 2px;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Addon AI Analysis - PostMessage Test</h1>
+  <!-- Addon Config Data -->
+  <div class="panel full-width" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin:0;">Addon Config Data</h2>
+      <button onclick="requestConfig()">REQUEST_CONFIG</button>
+    </div>
+    <div id="configData">
+      <div class="results-empty">尚未取得 config data。</div>
+    </div>
+  </div>
+  <div class="grid">
+    <!-- 1. Request AI Analyses -->
+    <div class="panel">
+      <h2>1. Request AI Analyses</h2>
+      <p style="color:#555;margin-bottom:8px;">取得當前 AI 分析結果</p>
+      <button onclick="requestAiAnalyses()">REQUEST_AI_ANALYSES</button>
+    </div>
+    <!-- 2. Enable Pipeline -->
+    <div class="panel">
+      <h2>2. Enable Pipeline</h2>
+      <p style="color:#555;margin-bottom:8px;">啟用/停用逐字稿 pipeline</p>
+      <div class="field">
+        <label>name</label>
+        <select id="pipelineName">
+          <option value="batch" selected>batch (課後逐字稿)</option>
+          <option value="realtime">realtime (即時字幕)</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button onclick="enablePipeline(true)">Enable</button>
+        <button onclick="enablePipeline(false)"
+          style="background:#3a1a1a;border-color:#e74c3c33;color:#e74c3c;">Disable</button>
+      </div>
+    </div>
+    <!-- 3. Set AI Analysis Params -->
+    <div class="panel full-width">
+      <h2>3. Set AI Analysis Params</h2>
+      <p style="color:#555;margin-bottom:8px;">設定 AI Role 參數</p>
+      <div class="field">
+        <label>role_name</label>
+        <input type="text" id="roleName" value="kevin_test1" />
+      </div>
+      <div class="field">
+        <label>params (JSON)</label>
+        <textarea id="roleParams">[
+        {
+          "role_name": "kevin_test1",
+          "params": {
+            "language": "en"
+          }
+        },
+        {
+          "role_name": "kevin_test2",
+          "params": {
+            "max_topics": "3",
+            "language": "zh-TW"
+          }
+        },
+        {
+          "role_name": "kevin_test3",
+          "params": {
+            "max_sentences": "2",
+            "audience": "teacher"
+          }
+        }
+      ]</textarea>
+      </div>
+      <button onclick="setAiAnalysisParams()">SET_AI_ANALYSIS_PARAMS</button>
+    </div>
+    <!-- 4. Subscribe AI Analyses -->
+    <div class="panel">
+      <h2>4. Subscribe AI Analyses</h2>
+      <p style="color:#555;margin-bottom:8px;"> 訂閱 AI 分析推送 <span id="subscriptionStatus"
+          class="status status-waiting">未訂閱</span>
+      </p>
+      <div class="btn-group">
+        <button onclick="subscribeAiAnalyses()">Subscribe</button>
+        <button onclick="unsubscribeAiAnalyses()"
+          style="background:#3a1a1a;border-color:#e74c3c33;color:#e74c3c;">Unsubscribe</button>
+      </div>
+    </div>
+    <!-- 5. Subscribe Transcript -->
+    <div class="panel">
+      <h2>5. Subscribe Transcript</h2>
+      <p style="color:#555;margin-bottom:8px;"> 訂閱即時逐字稿 <span id="transcriptSubStatus"
+          class="status status-waiting">未訂閱</span>
+      </p>
+      <div class="btn-group">
+        <button onclick="subscribeTranscript()">Subscribe</button>
+        <button onclick="unsubscribeTranscript()"
+          style="background:#3a1a1a;border-color:#e74c3c33;color:#e74c3c;">Unsubscribe</button>
+      </div>
+    </div>
+  </div>
+  <!-- Realtime Transcript -->
+  <div class="panel full-width" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin:0;">Realtime Transcript</h2>
+      <button class="clear-btn" onclick="clearTranscript()">Clear</button>
+    </div>
+    <div id="transcriptContainer">
+      <div class="results-empty">尚未收到逐字稿。請先訂閱 Transcript。</div>
+    </div>
+  </div>
+  <!-- AI Analysis Results -->
+  <div class="panel full-width" style="margin-bottom:16px;">
+    <h2>AI Analysis Results</h2>
+    <div id="results">
+      <div class="results-empty">尚未收到任何 AI 分析結果。點擊 REQUEST_AI_ANALYSES 或訂閱推送。</div>
+    </div>
+  </div>
+  <!-- Log -->
+  <div class="panel full-width">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin:0;">Message Log</h2>
+      <button class="clear-btn" onclick="clearLog()">Clear</button>
+    </div>
+    <div id="log"></div>
+  </div>
+  <script>
+    var requestCounter = 0;
+    var isSubscribed = false;
+    var isTranscriptSubscribed = false;
+    var transcriptLines = [];
+
+    function genId() {
+      return 'req-' + (++requestCounter);
+    }
+
+    function now() {
+      return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+    }
+
+    function appendLog(cls, prefix, data) {
+      var el = document.getElementById('log');
+      var line = document.createElement('div');
+      line.innerHTML = '<span class="log-time">[' + now() + ']</span> <span class="' + cls + '">' + prefix + '</span> ' + JSON.stringify(data, null, 2);
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function send(type, payload) {
+      var requestId = genId();
+      var msg = { type: type, requestId: requestId };
+      if (payload !== undefined) msg.payload = payload;
+      appendLog('log-send', 'SEND >>>', msg);
+      window.parent.postMessage(msg, '*');
+      return requestId;
+    }
+
+    // --- Render AI Analysis Results ---
+
+    function renderResults(payload, source) {
+      var container = document.getElementById('results');
+      var analyses = payload.aiAnalyses;
+      var timestamp = payload.timestamp;
+
+      if (!analyses || analyses.length === 0) {
+        container.innerHTML = '<div class="results-empty">回應成功，但 aiAnalyses 為空陣列（尚無分析結果）。timestamp: ' + (timestamp || 'N/A') + '</div>';
+        return;
+      }
+
+      var sourceLabel = source === 'push'
+        ? '<span class="result-source source-push">PUSH</span>'
+        : '<span class="result-source source-request">REQUEST</span>';
+
+      var html = '';
+      for (var i = 0; i < analyses.length; i++) {
+        var item = analyses[i];
+        var parsed = '';
+        try {
+          var obj = JSON.parse(item.result);
+          parsed = JSON.stringify(obj, null, 2);
+        } catch (e) {
+          parsed = item.result;
+        }
+
+        html += '<div class="result-card">'
+          + '<div class="result-header">'
+          + '<span class="result-role">' + escapeHtml(item.role_name) + '</span>'
+          + '<span><span class="result-lang">' + escapeHtml(item.language) + '</span>' + sourceLabel + '</span>'
+          + '</div>'
+          + '<div class="result-body">' + escapeHtml(parsed) + '</div>'
+          + '</div>';
+      }
+
+      html += '<div class="result-timestamp">timestamp: ' + formatTimestamp(timestamp) + ' (' + timestamp + ')</div>';
+      container.innerHTML = html;
+    }
+
+    // --- Render Transcript ---
+
+    function renderTranscript(payload) {
+      var container = document.getElementById('transcriptContainer');
+      var isPartial = payload.isPartial;
+      var text = payload.transcript;
+      var lang = payload.language || '';
+      var attendeeId = payload.attendeeId || '';
+
+      // For partial, update or add
+      if (isPartial) {
+        // Find existing partial for this attendee
+        var found = false;
+        for (var i = transcriptLines.length - 1; i >= 0; i--) {
+          if (transcriptLines[i].attendeeId === attendeeId && transcriptLines[i].isPartial) {
+            transcriptLines[i].text = text;
+            transcriptLines[i].language = lang;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          transcriptLines.push({ attendeeId: attendeeId, text: text, language: lang, isPartial: true, time: now() });
+        }
+      } else {
+        // Final: remove any partial for this attendee and add final
+        transcriptLines = transcriptLines.filter(function (l) {
+          return !(l.attendeeId === attendeeId && l.isPartial);
+        });
+        transcriptLines.push({ attendeeId: attendeeId, text: text, language: lang, isPartial: false, time: now() });
+      }
+
+      // Render
+      if (transcriptLines.length === 0) {
+        container.innerHTML = '<div class="results-empty">尚未收到逐字稿。請先訂閱 Transcript。</div>';
+        return;
+      }
+
+      var html = '';
+      for (var j = 0; j < transcriptLines.length; j++) {
+        var line = transcriptLines[j];
+        var cls = line.isPartial ? 'transcript-partial' : 'transcript-final';
+        html += '<div class="transcript-line ' + cls + '">'
+          + '<span class="transcript-meta">[' + line.time + ']</span>'
+          + '<span class="transcript-lang">' + escapeHtml(line.language) + '</span>'
+          + (line.isPartial ? '<em>(partial)</em> ' : '')
+          + escapeHtml(line.text)
+          + '</div>';
+      }
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearTranscript() {
+      transcriptLines = [];
+      document.getElementById('transcriptContainer').innerHTML = '<div class="results-empty">已清除。</div>';
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return 'N/A';
+      try {
+        return new Date(ts).toLocaleString('zh-TW');
+      } catch (e) {
+        return String(ts);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // --- Actions ---
+
+    function requestConfig() {
+      send('REQUEST_CONFIG');
+    }
+
+    function renderConfigData(payload) {
+      var container = document.getElementById('configData');
+      var html = '<div class="result-card">'
+        + '<div class="result-header">'
+        + '<span class="result-role">' + escapeHtml(payload.addonName) + '</span>'
+        + '<span style="color:#7f8c8d;font-size:11px;">ID: ' + escapeHtml(payload.addonId) + '</span>'
+        + '</div>'
+        + '<div class="result-body">' + escapeHtml(JSON.stringify(payload.data, null, 2)) + '</div>'
+        + '</div>';
+      container.innerHTML = html;
+    }
+
+    function requestAiAnalyses() {
+      send('REQUEST_AI_ANALYSES');
+    }
+
+    function enablePipeline(enabled) {
+      var name = document.getElementById('pipelineName').value;
+      send('ENABLE_BATCH_PIPELINE', { enabled: enabled, name: name });
+    }
+
+    function setAiAnalysisParams() {
+      var roleName = document.getElementById('roleName').value.trim();
+      var params;
+      try {
+        params = JSON.parse(document.getElementById('roleParams').value);
+      } catch (e) {
+        appendLog('log-error', 'ERROR', 'Invalid JSON in params: ' + e.message);
+        return;
+      }
+      send('SET_AI_ANALYSIS_PARAMS', {
+        params: [{ role_name: roleName, params: params }]
+      });
+    }
+
+    function subscribeAiAnalyses() {
+      send('SUBSCRIBE_AI_ANALYSES');
+    }
+
+    function unsubscribeAiAnalyses() {
+      send('UNSUBSCRIBE_AI_ANALYSES');
+      isSubscribed = false;
+      updateSubscriptionStatus();
+    }
+
+    function subscribeTranscript() {
+      send('SUBSCRIBE_TRANSCRIPT');
+    }
+
+    function unsubscribeTranscript() {
+      send('UNSUBSCRIBE_TRANSCRIPT');
+      isTranscriptSubscribed = false;
+      updateTranscriptSubStatus();
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    function updateSubscriptionStatus() {
+      var el = document.getElementById('subscriptionStatus');
+      if (isSubscribed) {
+        el.textContent = '已訂閱';
+        el.className = 'status status-sub';
+      } else {
+        el.textContent = '未訂閱';
+        el.className = 'status status-waiting';
+      }
+    }
+
+    function updateTranscriptSubStatus() {
+      var el = document.getElementById('transcriptSubStatus');
+      if (isTranscriptSubscribed) {
+        el.textContent = '已訂閱';
+        el.className = 'status status-sub';
+      } else {
+        el.textContent = '未訂閱';
+        el.className = 'status status-waiting';
+      }
+    }
+
+    // --- Listener ---
+
+    window.addEventListener('message', function (event) {
+      if (!event.data || typeof event.data !== 'object' || !event.data.type) return;
+
+      var data = event.data;
+
+      switch (data.type) {
+        case 'RESPONSE_CONFIG':
+          appendLog('log-recv', 'RECV <<<', data);
+          if (data.payload) renderConfigData(data.payload);
+          break;
+        case 'RESPONSE_USER_DATA':
+          appendLog('log-recv', 'RECV <<<', data);
+          break;
+        case 'RESPONSE_AI_ANALYSES':
+          appendLog('log-recv', 'RECV <<<', data);
+          if (data.payload) renderResults(data.payload, 'request');
+          break;
+        case 'RESPONSE_SET_AI_ANALYSIS_PARAMS':
+          appendLog('log-recv', 'RECV <<<', data);
+          break;
+        case 'RESPONSE_ENABLE_BATCH_PIPELINE':
+          appendLog('log-recv', 'RECV <<<', data);
+          break;
+        case 'RESPONSE_SUBSCRIBE_AI_ANALYSES':
+          appendLog('log-recv', 'RECV <<<', data);
+          if (data.payload && data.payload.ok) {
+            isSubscribed = true;
+            updateSubscriptionStatus();
+          }
+          break;
+        case 'RESPONSE_SUBSCRIBE_TRANSCRIPT':
+          appendLog('log-recv', 'RECV <<<', data);
+          if (data.payload && data.payload.ok) {
+            isTranscriptSubscribed = true;
+            updateTranscriptSubStatus();
+          }
+          break;
+        case 'PUSH_AI_ANALYSES':
+          appendLog('log-push', 'PUSH <<<', data);
+          if (data.payload) renderResults(data.payload, 'push');
+          break;
+        case 'PUSH_TRANSCRIPT':
+          // Don't log every transcript to avoid spam
+          if (data.payload) renderTranscript(data.payload);
+          break;
+        case 'ERROR':
+          appendLog('log-error', 'ERROR <<<', data);
+          break;
+        default:
+          appendLog('log-recv', 'RECV <<<', data);
+      }
+    });
+
+    appendLog('log-recv', 'INFO', 'Test page loaded. Auto-initializing...');
+
+    // Auto-init on load: request config + enable batch pipeline + request AI analyses + subscribe + subscribe transcript
+    setTimeout(function () {
+      appendLog('log-recv', 'AUTO', 'Requesting addon config...');
+      requestConfig();
+
+      setTimeout(function () {
+        appendLog('log-recv', 'AUTO', 'Enabling batch pipeline...');
+        enablePipeline(true); // batch is default
+
+        setTimeout(function () {
+          appendLog('log-recv', 'AUTO', 'Requesting AI analyses...');
+          requestAiAnalyses();
+
+          setTimeout(function () {
+            appendLog('log-recv', 'AUTO', 'Subscribing to AI analyses push...');
+            subscribeAiAnalyses();
+
+            setTimeout(function () {
+              appendLog('log-recv', 'AUTO', 'Subscribing to transcript push...');
+              subscribeTranscript();
+            }, 500);
+          }, 500);
+        }, 500);
+      }, 500);
+    }, 300);
+  </script>
+</body>
+
+</html>
