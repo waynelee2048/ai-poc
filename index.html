@@ -311,6 +311,63 @@
       border-radius: 2px;
       margin-right: 6px;
     }
+
+    /* Role param group styles */
+    .role-param-group {
+      background: #0f1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .role-param-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .role-param-group-title {
+      color: #00d2ff;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .role-param-group .remove-btn {
+      background: #3a1a1a;
+      color: #e74c3c;
+      border: 1px solid #e74c3c33;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .role-param-group .remove-btn:hover {
+      background: #4a2a2a;
+    }
+
+    .role-param-group .field {
+      margin-bottom: 8px;
+    }
+
+    .role-param-group .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .role-param-group textarea {
+      min-height: 60px;
+    }
+
+    #roleParamsContainer:empty::after {
+      content: '尚未新增任何 Role。點擊「+ 新增 Role」按鈕開始設定。';
+      color: #555;
+      font-style: italic;
+      display: block;
+      padding: 10px;
+    }
   </style>
 </head>
 
@@ -353,18 +410,14 @@
     <!-- 3. Set AI Analysis Params -->
     <div class="panel full-width">
       <h2>3. Set AI Analysis Params</h2>
-      <p style="color:#555;margin-bottom:8px;">設定 AI Role 參數</p>
-      <div class="field">
-        <label>role_name</label>
-        <input type="text" id="roleName" value="kevin_test1" />
+      <p style="color:#555;margin-bottom:8px;">設定多組 AI Role 參數（組合成 array 送出）</p>
+      <div id="roleParamsContainer">
+        <!-- Role param groups will be rendered here -->
       </div>
-      <div class="field">
-        <label>params (JSON)</label>
-        <textarea id="roleParams">{
-          "language": "en"
-        }</textarea>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button onclick="addRoleParamGroup()" style="background:#1a3a1a;border-color:#2ecc7133;color:#2ecc71;">+ 新增 Role</button>
+        <button onclick="setAiAnalysisParams()">SET_AI_ANALYSIS_PARAMS</button>
       </div>
-      <button onclick="setAiAnalysisParams()">SET_AI_ANALYSIS_PARAMS</button>
     </div>
     <!-- 4. Subscribe AI Analyses -->
     <div class="panel">
@@ -421,6 +474,8 @@
     var isSubscribed = false;
     var isTranscriptSubscribed = false;
     var transcriptLines = [];
+    var roleParamGroupCounter = 0;
+    var roleParamGroups = [];
 
     function genId() {
       return 'req-' + (++requestCounter);
@@ -588,19 +643,73 @@
       send('ENABLE_BATCH_PIPELINE', { enabled: enabled, name: name });
     }
 
+    function addRoleParamGroup(roleName, params) {
+      var groupId = ++roleParamGroupCounter;
+      roleParamGroups.push(groupId);
+
+      var defaultRoleName = roleName || 'kevin_test1';
+      var defaultParams = params || '{\n  "language": "en"\n}';
+
+      var container = document.getElementById('roleParamsContainer');
+      var groupDiv = document.createElement('div');
+      groupDiv.className = 'role-param-group';
+      groupDiv.id = 'roleGroup-' + groupId;
+      groupDiv.innerHTML = '<div class="role-param-group-header">'
+        + '<span class="role-param-group-title">Role #' + groupId + '</span>'
+        + '<button class="remove-btn" onclick="removeRoleParamGroup(' + groupId + ')">移除</button>'
+        + '</div>'
+        + '<div class="field">'
+        + '<label>role_name</label>'
+        + '<input type="text" id="roleName-' + groupId + '" value="' + escapeHtml(defaultRoleName) + '" />'
+        + '</div>'
+        + '<div class="field">'
+        + '<label>params (JSON)</label>'
+        + '<textarea id="roleParams-' + groupId + '">' + escapeHtml(defaultParams) + '</textarea>'
+        + '</div>';
+      container.appendChild(groupDiv);
+    }
+
+    function removeRoleParamGroup(groupId) {
+      var index = roleParamGroups.indexOf(groupId);
+      if (index > -1) {
+        roleParamGroups.splice(index, 1);
+      }
+      var groupDiv = document.getElementById('roleGroup-' + groupId);
+      if (groupDiv) {
+        groupDiv.remove();
+      }
+    }
+
     function setAiAnalysisParams() {
-      var roleName = document.getElementById('roleName').value.trim();
-      var params;
-      try {
-        params = JSON.parse(document.getElementById('roleParams').value);
-      } catch (e) {
-        appendLog('log-error', 'ERROR', 'Invalid JSON in params: ' + e.message);
+      if (roleParamGroups.length === 0) {
+        appendLog('log-error', 'ERROR', '請先新增至少一組 Role 參數');
         return;
       }
-      const payload = [{
-        role_name: roleName,
-        params,
-      }]
+
+      var payload = [];
+      for (var i = 0; i < roleParamGroups.length; i++) {
+        var groupId = roleParamGroups[i];
+        var roleName = document.getElementById('roleName-' + groupId).value.trim();
+        var paramsText = document.getElementById('roleParams-' + groupId).value;
+
+        if (!roleName) {
+          appendLog('log-error', 'ERROR', 'Role #' + groupId + ' 的 role_name 不能為空');
+          return;
+        }
+
+        var params;
+        try {
+          params = JSON.parse(paramsText);
+        } catch (e) {
+          appendLog('log-error', 'ERROR', 'Role #' + groupId + ' 的 params JSON 格式錯誤: ' + e.message);
+          return;
+        }
+
+        payload.push({
+          role_name: roleName,
+          params: params
+        });
+      }
 
       send('SET_AI_ANALYSIS_PARAMS', payload);
     }
@@ -707,6 +816,11 @@
     });
 
     appendLog('log-recv', 'INFO', 'Test page loaded. Auto-initializing...');
+
+    // Initialize with three default role param groups
+    addRoleParamGroup('kevin_test1', '{\n  "language": "en"\n}');
+    addRoleParamGroup('kevin_test2', '{\n  "max_topics": "3",\n  "language": "zh-TW"\n}');
+    addRoleParamGroup('kevin_test3', '{\n  "max_sentences": "2",\n  "audience": "teacher"\n}');
 
     // Auto-init on load: request config + enable batch pipeline + request AI analyses + subscribe + subscribe transcript
     setTimeout(function () {
