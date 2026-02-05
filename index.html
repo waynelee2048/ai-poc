@@ -360,7 +360,7 @@
       </div>
       <div class="field">
         <label>params (JSON)</label>
-        <textarea id="roleParams">"params": {
+        <textarea id="roleParams">{
           "language": "en"
         }</textarea>
       </div>
@@ -597,10 +597,12 @@
         appendLog('log-error', 'ERROR', 'Invalid JSON in params: ' + e.message);
         return;
       }
-      send('SET_AI_ANALYSIS_PARAMS', {
+      const payload = [{
         role_name: roleName,
-        params: params
-      });
+        params,
+      }]
+
+      send('SET_AI_ANALYSIS_PARAMS', payload);
     }
 
     function subscribeAiAnalyses() {
