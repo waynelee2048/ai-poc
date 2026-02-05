@@ -598,7 +598,8 @@
         return;
       }
       send('SET_AI_ANALYSIS_PARAMS', {
-        params: [{ role_name: roleName, params: params }]
+        role_name: roleName,
+        params: params
       });
     }
 
