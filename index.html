@@ -360,28 +360,9 @@
       </div>
       <div class="field">
         <label>params (JSON)</label>
-        <textarea id="roleParams">[
-        {
-          "role_name": "kevin_test1",
-          "params": {
-            "language": "en"
-          }
-        },
-        {
-          "role_name": "kevin_test2",
-          "params": {
-            "max_topics": "3",
-            "language": "zh-TW"
-          }
-        },
-        {
-          "role_name": "kevin_test3",
-          "params": {
-            "max_sentences": "2",
-            "audience": "teacher"
-          }
-        }
-      ]</textarea>
+        <textarea id="roleParams">"params": {
+          "language": "en"
+        }</textarea>
       </div>
       <button onclick="setAiAnalysisParams()">SET_AI_ANALYSIS_PARAMS</button>
     </div>
